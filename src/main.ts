@@ -8,6 +8,8 @@ import * as core from '@actions/core'
  */
 export async function run(): Promise<void> {
   try {
+    core.debug(`DEBUG: Procesing file...`)
+    console.log(`CONSOLE: Procesing file...`)
     // Assuming `file` is a JSON string.
     const file = core.getInput('file')
     const fileContent = fs.readFileSync(file, 'utf8')
@@ -52,10 +54,16 @@ export async function run(): Promise<void> {
         summary: summary,
         failed_tests_by_file: failedTestsByFile
       })
+      core.setOutput('output', processedContent)
+    } else {
+      core.setOutput('output', 'All tests were successfull!')
     }
-    core.setOutput('output', processedContent)
   } catch (error) {
     // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    } else {
+      core.setFailed('An unknown error occurred.')
+    }
   }
 }

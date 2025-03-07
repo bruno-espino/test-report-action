@@ -27254,6 +27254,8 @@ var coreExports = requireCore();
  */
 async function run() {
     try {
+        coreExports.debug(`DEBUG: Procesing file...`);
+        console.log(`CONSOLE: Procesing file...`);
         // Assuming `file` is a JSON string.
         const file = coreExports.getInput('file');
         const fileContent = require$$1.readFileSync(file, 'utf8');
@@ -27279,13 +27281,20 @@ async function run() {
                 summary: summary,
                 failed_tests_by_file: failedTestsByFile
             });
+            coreExports.setOutput('output', processedContent);
         }
-        coreExports.setOutput('output', processedContent);
+        else {
+            coreExports.setOutput('output', 'All tests were successfull!');
+        }
     }
     catch (error) {
         // Fail the workflow run if an error occurs
-        if (error instanceof Error)
+        if (error instanceof Error) {
             coreExports.setFailed(error.message);
+        }
+        else {
+            coreExports.setFailed('An unknown error occurred.');
+        }
     }
 }
 
