@@ -1,4 +1,4 @@
-name: 'Test Insights'
+name: 'Test Insight'
 description:
   'Reads a JSON file, processes test results, and saves processed data.'
 author: 'Bruno Espino'
