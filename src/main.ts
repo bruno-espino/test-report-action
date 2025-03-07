@@ -1,3 +1,4 @@
+import * as fs from 'fs'
 import * as core from '@actions/core'
 
 /**
@@ -9,7 +10,8 @@ export async function run(): Promise<void> {
   try {
     // Assuming `file` is a JSON string.
     const file = core.getInput('file')
-    const data = JSON.parse(file)
+    const fileContent = fs.readFileSync(file, 'utf8')
+    const data = JSON.parse(fileContent)
     const results = data.results || {}
     const summary = results.summary || {}
     const tests = results.tests || []
