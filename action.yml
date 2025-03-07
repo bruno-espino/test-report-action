@@ -1,23 +1,22 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: 'Test Insights'
+description:
+  'Reads a JSON file, processes test results, and saves processed data.'
+author: 'Bruno Espino'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: 'repeat'
+  color: 'blue'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  file:
+    description: 'Path to the JSON file output from the automated test step'
     required: true
-    default: '1000'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  output:
+    description: 'Output'
 
 runs:
   using: node20

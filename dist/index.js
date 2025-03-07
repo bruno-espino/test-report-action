@@ -27247,35 +27247,38 @@ function requireCore () {
 var coreExports = requireCore();
 
 /**
- * Waits for a number of milliseconds.
- *
- * @param milliseconds The number of milliseconds to wait.
- * @returns Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
-    return new Promise((resolve) => {
-        if (isNaN(milliseconds))
-            throw new Error('milliseconds is not a number');
-        setTimeout(() => resolve('done!'), milliseconds);
-    });
-}
-
-/**
  * The main function for the action.
  *
  * @returns Resolves when the action is complete.
  */
 async function run() {
     try {
-        const ms = coreExports.getInput('milliseconds');
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        coreExports.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        coreExports.debug(new Date().toTimeString());
-        await wait(parseInt(ms, 10));
-        coreExports.debug(new Date().toTimeString());
-        // Set outputs for other workflow steps to use
-        coreExports.setOutput('time', new Date().toTimeString());
+        // Assuming `file` is a JSON string.
+        const file = coreExports.getInput('file');
+        const data = JSON.parse(file);
+        const results = data.results || {};
+        const summary = results.summary || {};
+        const tests = results.tests || [];
+        const failedTestsByFile = {};
+        function processTest(test) {
+            const filePath = test.filePath;
+            if (test.status === 'failed') {
+                if (!failedTestsByFile[filePath]) {
+                    failedTestsByFile[filePath] = [];
+                }
+                failedTestsByFile[filePath].push(test);
+            }
+        }
+        tests.forEach(processTest);
+        let processedContent;
+        if (Object.keys(summary).length > 0 &&
+            Object.keys(failedTestsByFile).length > 0) {
+            processedContent = JSON.stringify({
+                summary: summary,
+                failed_tests_by_file: failedTestsByFile
+            });
+        }
+        coreExports.setOutput('output', processedContent);
     }
     catch (error) {
         // Fail the workflow run if an error occurs

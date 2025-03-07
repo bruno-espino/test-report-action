@@ -1,5 +1,4 @@
 import * as core from '@actions/core'
-import { wait } from './wait.js'
 
 /**
  * The main function for the action.
@@ -8,18 +7,51 @@ import { wait } from './wait.js'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    // Assuming `file` is a JSON string.
+    const file = core.getInput('file')
+    const data = JSON.parse(file)
+    const results = data.results || {}
+    const summary = results.summary || {}
+    const tests = results.tests || []
+    const failedTestsByFile: { [key: string]: Test[] } = {}
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    interface Test {
+      name: string
+      status: string
+      duration: number
+      message?: string
+      trace?: string
+      rawStatus: string
+      type: string
+      filePath: string
+      retries: number
+      flaky: boolean
+      browser: string
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    function processTest(test: Test): void {
+      const filePath = test.filePath
+      if (test.status === 'failed') {
+        if (!failedTestsByFile[filePath]) {
+          failedTestsByFile[filePath] = []
+        }
+        failedTestsByFile[filePath].push(test)
+      }
+    }
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    tests.forEach(processTest)
+
+    let processedContent: string | undefined
+    if (
+      Object.keys(summary).length > 0 &&
+      Object.keys(failedTestsByFile).length > 0
+    ) {
+      processedContent = JSON.stringify({
+        summary: summary,
+        failed_tests_by_file: failedTestsByFile
+      })
+    }
+    core.setOutput('output', processedContent)
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)

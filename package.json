@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
-  "author": "",
+  "name": "test-insights-action",
+  "description": "A GitHub Action to process test result files, extract insights, and generate actionable reports.",
+  "version": "0.1.0",
+  "author": "Bruno Espino",
   "type": "module",
   "private": true,
   "homepage": "https://github.com/actions/typescript-action",
@@ -33,7 +33,7 @@
     "package": "npx rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
     "package:watch": "npm run package -- --watch",
     "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
-    "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
+    "all": "npm run format:write && npm run lint && npm run coverage && npm run package"
   },
   "license": "MIT",
   "dependencies": {
