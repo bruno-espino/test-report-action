@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 
 /**
  * The main function for the action.
@@ -8,9 +9,10 @@ import * as core from '@actions/core'
  */
 export async function run(): Promise<void> {
   try {
-    core.debug(`DEBUG: Procesing file...`)
+    const payload = JSON.stringify(github.context.payload, undefined, 2)
+    console.log(`PAYLOAD: ${payload}`)
+    console.log(`..........................`)
     console.log(`CONSOLE: Procesing file...`)
-    // Assuming `file` is a JSON string.
     const file = core.getInput('file')
     const fileContent = fs.readFileSync(file, 'utf8')
     const data = JSON.parse(fileContent)
@@ -54,12 +56,11 @@ export async function run(): Promise<void> {
         summary: summary,
         failed_tests_by_file: failedTestsByFile
       })
-      core.setOutput('output', processedContent)
+      console.log(`tests results: ${processedContent}`)
     } else {
       core.setOutput('output', 'All tests were successfull!')
     }
   } catch (error) {
-    // Fail the workflow run if an error occurs
     if (error instanceof Error) {
       core.setFailed(error.message)
     } else {
