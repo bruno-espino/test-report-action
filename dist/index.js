@@ -31232,44 +31232,87 @@ function requireGithub () {
 var githubExports = requireGithub();
 
 /**
+ * Parses the GitHub event payload into a simplified format.
+ *
+ * @param payload - The GitHub event payload.
+ * @returns The parsed Git event.
+ * @throws Error if the payload is unsupported.
+ */
+function parseGitEvent(payload) {
+    if ('pull_request' in payload) {
+        const { pull_request: pr, repository } = payload;
+        return {
+            type: 'pull_request',
+            repoUrl: repository.html_url,
+            eventUrl: pr.html_url,
+            user: pr.user.login,
+            time: pr.created_at,
+            branch: pr.head.ref,
+            message: pr.title
+        };
+    }
+    else if ('head_commit' in payload) {
+        const commit = payload.head_commit;
+        // Extract branch name from the ref (format "refs/heads/<branch>")
+        const branch = payload.ref.split('/').pop() || payload.ref;
+        return {
+            type: 'commit',
+            repoUrl: payload.repository.html_url,
+            eventUrl: commit.url,
+            user: commit.author.name,
+            time: commit.timestamp,
+            branch: branch,
+            message: commit.message,
+            commitId: commit.id
+        };
+    }
+    throw new Error('Unsupported GitHub event payload');
+}
+/**
  * The main function for the action.
  *
  * @returns Resolves when the action is complete.
  */
 async function run() {
     try {
-        const payload = JSON.stringify(githubExports.context.payload, undefined, 2);
-        console.log(`PAYLOAD: ${payload}`);
-        console.log(`..........................`);
-        console.log(`CONSOLE: Procesing file...`);
-        const file = coreExports.getInput('file');
+        const parsedEvent = parseGitEvent(githubExports.context.payload);
+        coreExports.info('\u001b[32mEvent relevant information: ' +
+            JSON.stringify(parsedEvent, null, 2) +
+            '\u001b[0m');
+        coreExports.info('\u001b[33m..........................\u001b[0m');
+        coreExports.info('\u001b[34mCONSOLE: Processing file...\u001b[0m');
+        const file = coreExports.getInput('file', { required: true });
         const fileContent = require$$1.readFileSync(file, 'utf8');
         const data = JSON.parse(fileContent);
-        const results = data.results || {};
-        const summary = results.summary || {};
-        const tests = results.tests || [];
+        const results = data.results ?? {};
+        const summary = results.summary ?? {};
+        const tests = results.tests ?? [];
         const failedTestsByFile = {};
+        /**
+         * Processes a single test result and collects failures.
+         *
+         * @param test - The test object to process.
+         */
         function processTest(test) {
-            const filePath = test.filePath;
             if (test.status === 'failed') {
-                if (!failedTestsByFile[filePath]) {
-                    failedTestsByFile[filePath] = [];
+                if (!failedTestsByFile[test.filePath]) {
+                    failedTestsByFile[test.filePath] = [];
                 }
-                failedTestsByFile[filePath].push(test);
+                failedTestsByFile[test.filePath].push(test);
             }
         }
         tests.forEach(processTest);
-        let processedContent;
         if (Object.keys(summary).length > 0 &&
             Object.keys(failedTestsByFile).length > 0) {
-            processedContent = JSON.stringify({
+            const processedContent = JSON.stringify({
                 summary: summary,
                 failed_tests_by_file: failedTestsByFile
             });
-            console.log(`tests results: ${processedContent}`);
+            coreExports.info('\u001b[31mSome tests failed\u001b[0m');
+            coreExports.info(`Results: ${processedContent}`);
         }
         else {
-            coreExports.setOutput('output', 'All tests were successfull!');
+            coreExports.info('\u001b[32mAll tests were successful!\u001b[0m');
         }
     }
     catch (error) {

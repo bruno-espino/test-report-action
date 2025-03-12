@@ -1,7 +1,7 @@
 {
   "name": "test-insights-action",
   "description": "A GitHub Action to process test result files, extract insights, and generate actionable reports.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "Bruno Espino",
   "type": "module",
   "private": true,
