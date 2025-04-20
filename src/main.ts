@@ -103,7 +103,7 @@ function parseGitEvent(payload: GitEventPayload): ParsedGitEvent {
       type: 'commit',
       repoUrl: payload.repository.html_url,
       eventUrl: commit.url,
-      user: commit.author.name,
+      user: commit.author.username,
       time: commit.timestamp,
       branch: branch,
       message: commit.message,
@@ -135,39 +135,24 @@ export async function run(): Promise<void> {
     const fileContent = fs.readFileSync(file, 'utf8')
     const data = JSON.parse(fileContent)
 
-    const results = data.results ?? {}
+    let results = data.results ?? {}
     const summary = results.summary ?? {}
-    const tests: Test[] = results.tests ?? []
-    const failedTestsByFile: { [key: string]: Test[] } = {}
-
-    /**
-     * Processes a single test result and collects failures.
-     *
-     * @param test - The test object to process.
-     */
-    function processTest(test: Test): void {
-      if (test.status === 'failed') {
-        if (!failedTestsByFile[test.filePath]) {
-          failedTestsByFile[test.filePath] = []
-        }
-        failedTestsByFile[test.filePath].push(test)
-      }
+    const tests = results.tests ?? []
+    if (results.environment) {
+      environment = results.environment
+    } else {
+      environment = { repositoryUrl: parsedEvent.repoUrl, branchName: parsedEvent.branch, commit: parsedEvent.type === "commit" ? parsedEvent.commitId : ""  }
     }
-
-    tests.forEach(processTest)
-
+    const context = { type: parsedEvent.type, actor: parsedEvent.user, eventURL: parsedEvent.eventUrl }
+    const payload = { results: { summary, tests, environment }, context}
     if (
-      Object.keys(summary).length > 0 &&
-      Object.keys(failedTestsByFile).length > 0
+      Object.keys(summary).length > 0 && summary.failed > 0
     ) {
-      const processedContent = JSON.stringify({
-        summary: summary,
-        failed_tests_by_file: failedTestsByFile
-      })
       core.info('\u001b[31mSome tests failed\u001b[0m')
-      core.info(`Results: ${processedContent}`)
+      core.info(`Results: ${payload}`)
     } else {
       core.info('\u001b[32mAll tests were successful!\u001b[0m')
+      core.info(`Results: ${payload}`)
     }
   } catch (error) {
     if (error instanceof Error) {
