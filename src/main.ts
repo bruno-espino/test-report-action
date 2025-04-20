@@ -62,20 +62,6 @@ interface ParsedGitEvent {
   commitId?: string
 }
 
-interface Test {
-  name: string
-  status: string
-  duration: number
-  message?: string
-  trace?: string
-  rawStatus: string
-  type: string
-  filePath: string
-  retries: number
-  flaky: boolean
-  browser: string
-}
-
 /**
  * Parses the GitHub event payload into a simplified format.
  *
